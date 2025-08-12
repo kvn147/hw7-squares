@@ -67,9 +67,25 @@ export type Path = List<Dir>;
  */
 export const findSquare = (path: Path, root: Square): Square => {
   // TODO: implement straight from the spec
+  if (path === null) {
+    return root;
+  }
+  if (root.kind === "solid") {
+    throw new Error("path goes through a solid square");
+  }
 
-  return root; // TODO: remove
+  const dir = path.hd;
+  const rest = path.tl;
+
+  switch (dir) {
+    case "NW": return findSquare(rest, root.nw);
+    case "NE": return findSquare(rest, root.ne);
+    case "SW": return findSquare(rest, root.sw);
+    case "SE": return findSquare(rest, root.se);
+  }
+  return root;
 };
+
 
 /**
  * Returns the square that results from replacing the square at the given path
@@ -84,8 +100,22 @@ export const findSquare = (path: Path, root: Square): Square => {
  */
 export const replaceSquare = (path: Path, sq: Square, root: Square): Square => {
   // TODO: implement straight from the spec
+  if (path === null) {
+    return sq;
+  }
+  if (root.kind === "solid") {
+    throw new Error("path goes through a solid square");
+  }
+  const dir = path.hd;
+  const rest = path.tl;
 
-  return root; // TODO: remove
+    switch (dir) {
+    case "NW": return split(replaceSquare(rest, sq, root.nw), root.ne, root.sw, root.se);
+    case "NE": return split(root.nw, replaceSquare(rest, sq, root.ne), root.sw, root.se);
+    case "SW": return split(root.nw, root.ne, replaceSquare(rest, sq, root.sw), root.se);
+    case "SE": return split(root.nw, root.ne, root.sw, replaceSquare(rest, sq, root.se));
+  }
+  return root;
 };
 
 
