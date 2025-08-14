@@ -1,10 +1,12 @@
 import React, { Component, ChangeEvent, MouseEvent } from "react";
-import { Square, Path, split, solid  } from './square';
+import { Square, Path, split, solid, replaceSquare, toColor  } from './square';
 import { SquareElem } from "./square_draw";
 
 
 type FileEditorProps = {
   // TODO: may want to add some props
+  fileName: string;
+  dnBackClick: () => void;
 };
 
 
@@ -36,21 +38,50 @@ export class FileEditor extends Component<FileEditorProps, FileEditorState> {
   };
 
   doSquareClick = (path: Path): void => {
-    // TODO: remove this code, do something with the path to the selected square
-    console.log(path);
-    alert("Stop that!");
+    this.setState({
+      selected: path
+    });
   }
 
   doSplitClick = (_evt: MouseEvent<HTMLButtonElement>): void => {
     // TODO: implement
+    if (this.state.selected === undefined) {
+      alert("You must select a square to split!");
+      return;
+    }
+
+    const newSquare = split(
+      solid("white"), 
+      solid("white"), 
+      solid("white"), 
+      solid("white")
+    );
+
+    const newRoot = replaceSquare(this.state.selected, newSquare, this.state.root);
+    if (newRoot === undefined) {
+      alert("Selected square not found in the root square!");
+      return;
+    }
+
+    this.setState({ root: newRoot, selected: this.state.selected });
   };
 
   doMergeClick = (_evt: MouseEvent<HTMLButtonElement>): void => {
     // TODO: implement
+    if (this.state.selected === undefined) {
+      alert("You must select a square to merge!");
+      return;
+    }
+
   };
 
   doColorChange = (evt: ChangeEvent<HTMLSelectElement>): void => {
-    // TODO: remove this code, implement
-    console.log(evt);
+    if (this.state.selected === undefined) {
+      alert("You must select a square to change its color!");
+      return;
+    }
+
+    const newColor = toColor(evt.target.value);
+    const newSquare = solid(newColor);
   };
 }

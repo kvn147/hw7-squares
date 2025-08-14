@@ -1,6 +1,7 @@
-import { Request, Response } from "express";
+ import { Request, Response } from "express";
 import { ParamsDictionary } from "express-serve-static-core";
 import { Map, newAssocMap } from "./assoc";
+import { compact_list } from "./list";
 
 
 // Require type checking of request body.
@@ -39,18 +40,43 @@ export const dummy = (req: SafeRequest, res: SafeResponse): void => {
 /** Returns a list of all the named save files. */
 export const getNames = (_req: SafeRequest, _res: SafeResponse): void => {
   // TODO: Implement getNames route function
+  const names = compact_list(saved.getKeys());
+  _res.json({ names });
 };
 
 
 /** Updates the last save for the give name to the post value. */
 export const save = (_req: SafeRequest, _res: SafeResponse): void => {
   // TODO: Implement save route function
+  const name = first(_req.query.name);
+  if (name === undefined) {
+    _res.status(400).send('missing name parameter');
+    return;
+  }
+  const value = _req.body.value;
+  if (value === undefined) {
+    _res.status(400).send('missing value parameter');
+    return;
+  }
+  saved = saved.setValue(name, value);
+  _res.send({ success: true, name, value });
 };
 
 
 /** Returns the last save value or null if none. */
 export const load = (_req: SafeRequest, _res: SafeResponse): void => {
   // TODO: Implement load route function
+  const name = first(_req.query.name);
+  if (name === undefined) {
+    _res.status(400).send('missing name parameter');
+    return;
+  }
+  if (!saved.containsKey(name)) {
+    _res.send({ value: null });
+    return;
+  }
+  const value = saved.getValue(name);
+  _res.json({ value });
 };
 
 

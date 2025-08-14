@@ -67,7 +67,7 @@ export type Path = List<Dir>;
  */
 export const findSquare = (path: Path, root: Square): Square => {
   // TODO: implement straight from the spec
-  if (path === null) {
+  if (path.kind === "nil") {
     return root;
   }
   if (root.kind === "solid") {
@@ -100,7 +100,7 @@ export const findSquare = (path: Path, root: Square): Square => {
  */
 export const replaceSquare = (path: Path, sq: Square, root: Square): Square => {
   // TODO: implement straight from the spec
-  if (path === null) {
+  if (path.kind === "nil") {
     return sq;
   }
   if (root.kind === "solid") {

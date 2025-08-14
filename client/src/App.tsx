@@ -1,11 +1,12 @@
 import React, { Component } from "react";
 import { solid, split, Path, Square } from './square';
-import { SquareElem } from './square_draw';
-
+import { FileList } from './FileList';
+import { FileEditor } from './FileEditor';
 
 /** Describes set of possible app page views */
-type Page = undefined; // TODO: Replace with a Page type that keeps track
-                       //       of the necessary data
+type Page = { readonly kind: "loading" } |
+            { readonly kind: "fileList" } |
+            { readonly kind: "fileEditor", readonly name: string };
 
 type AppState = {
   show: Page;   // Stores state for the current page of the app to show
@@ -21,15 +22,19 @@ export class App extends Component<{}, AppState> {
     super(props);
 
     // TODO: change to correct starting view once it's implemented
-    this.state = {show: undefined};
+    this.state = {show: {kind: "fileList"}};
   }
 
   render = (): JSX.Element => {
     // TODO: Render a loading screen if app is accessing data from the server
     //       or display file list page or editor page appropraitely
-    const sq: Square = split(solid("blue"), solid("orange"), solid("purple"), solid("pink"));
-    return <SquareElem width={600n} height={600n} square={sq}
-      onClick={this.doSquareClick}/>;
+    if (this.state.show.kind === "fileList") {
+      return <FileList doFileClick={this.doFileClick} doCreateClick={this.doCreateClick} />;
+    }
+    if (this.state.show.kind === "fileEditor") {
+      return <FileEditor fileName={this.state.show.name} doBackClick={this.doBackClick} doSquareClick={this.doSquareClick} />;
+    } 
+    return (<FileEditor fileName={show.name} doBackClick={this.doBackClick} onSave={this.doSave} />);
   };
 
   // TODO: remove from app once you've implemented doSquareClick in FileEditor.tsx
@@ -40,4 +45,13 @@ export class App extends Component<{}, AppState> {
 
   // TODO: write functions here to handle switching between app pages and
   //       for accessing the server
+  doCreateClick = (name: string): void => {
+    this.setState({show: {kind: "fileEditor", name}});
+  };
+  doFileClick = (name: string): void => {
+    this.setState({show: {kind: "fileEditor", name}});
+  };
+  doBackClick = (): void => {
+    this.setState({show: {kind: "fileList"}});
+  }
 }
