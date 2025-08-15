@@ -24,8 +24,10 @@ export class FileList extends Component<FileListProps, FileListState> {
 
   render = (): JSX.Element => {
     // TODO: format list of files as links
+    
 
-    return (<div>
+    return (
+      <div>
         <h3>Files</h3>
         {/* TODO: Render file links & textbox for creating a file here */}
         <ul>
