@@ -3,8 +3,9 @@ import React, { Component, ChangeEvent, MouseEvent } from "react";
 
 type FileListProps = {
   // TODO: may want to add some props
-  doFileClick: (name: string) => void;
-  doCreateClick: (name: string) => void;
+  files: string[];
+  onFileClick: (name: string) => void;
+  onCreateClick: (name: string) => void;
 };
 
 
@@ -24,19 +25,39 @@ export class FileList extends Component<FileListProps, FileListState> {
 
   render = (): JSX.Element => {
     // TODO: format list of files as links
-    
-
     return (
       <div>
         <h3>Files</h3>
         {/* TODO: Render file links & textbox for creating a file here */}
-        <ul>
-          {/* List of files here */}
-        </ul>
+        {this.renderFileList()} <br/>
         Name:
         <input type="text" value={this.state.name} onChange={this.doNameChange} />
         <button onClick={this.doCreateClick}>Create</button>
       </div>);
+  };
+
+   renderFileList = (): JSX.Element => {
+    if (this.props.files.length === 0) {
+      return <p>No files found. Create a new file to get started!</p>;
+    }
+
+    const fileLinks: JSX.Element[] = [];
+    for (const fileName of this.props.files) {
+      fileLinks.push(
+        <li key={fileName}>
+          <a href="#" onClick={(evt) => this.doFileClick(evt, fileName)}>
+            {fileName}
+          </a>
+        </li>
+      );
+    }
+
+    return <ul>{fileLinks}</ul>;
+  };
+
+    doFileClick = (evt: MouseEvent<HTMLAnchorElement>, fileName: string): void => {
+    evt.preventDefault();
+    this.props.onFileClick(fileName);
   };
 
   // Updates our record with the name text being typed in
@@ -52,8 +73,7 @@ export class FileList extends Component<FileListProps, FileListState> {
       alert("You must enter a name for the new file!");
       return;
     }
-    this.props.doCreateClick(this.state.name);
+    this.props.onCreateClick(this.state.name);
     this.setState({name: ''});
   };
-
 }

@@ -97,6 +97,13 @@ export const findSquare = (path: Path, root: Square): Square => {
  * @returns replace(path, sq, root), where
  *   TODO: copy your mathematical definition for replace() here as you defined
  *         in HW8 written Task 1(a)
+ * 
+    replace(nil, R, S):= R
+    replace(NW :: L, R, split(nw, ne, sw, se)) := split(replace(L, R, nw), ne, sw, se)
+    replace(NE :: L, R, split(nw, ne, sw, se)) := split(nw, replace(L, R, ne), sw, se)
+    replace(SW :: L, R, split(nw, ne, sw, se)) := split(nw, ne, replace(L, R, sw), se)
+    replace(SE :: L, R, split(nw, ne, sw, se)) := split(nw, ne, sw, replace(L, R, se))
+    replace(d :: L, R, solid(c)) := undefined
  */
 export const replaceSquare = (path: Path, sq: Square, root: Square): Square => {
   // TODO: implement straight from the spec

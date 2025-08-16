@@ -7,7 +7,8 @@ import { prefix, len } from "./list";
 type FileEditorProps = {
   // TODO: may want to add some props
   fileName: string;
-  doBackClick: () => void;
+  initialSquare: Square;
+  onBackClick: () => void;
   onSave: (name: string, square: Square) => void;
 };
 
@@ -28,7 +29,7 @@ export class FileEditor extends Component<FileEditorProps, FileEditorState> {
     super(props);
 
     this.state = { // TODO: probably want to change this
-      root: split(solid("blue"), solid("orange"), solid("purple"), solid("pink"))
+      root: props.initialSquare
     };
   }
 
@@ -39,21 +40,37 @@ export class FileEditor extends Component<FileEditorProps, FileEditorState> {
       <SquareElem width={600n} height={600n}
                       square={this.state.root} selected={this.state.selected}
                       onClick={this.doSquareClick}/>
+      { this.renderControls() }
+      { this.renderButtons() }
+    </div>
+    );
+  };
+
+  renderControls = (): JSX.Element => {
+    return (
       <div>
-        <button onClick={this.doSplitClick}>Split</button>
+      <button onClick={this.doSplitClick}>Split</button>
         <button onClick={this.doMergeClick}>Merge</button>
         <select onChange={this.doColorChange}>
-          <option value="white">White</option>      
-          <option value="black">Black</option>
-          <option value="red">Red</option>
+          <option value="">Choose Color</option>
+          <option value="white">White</option>
+          <option value="pink">Pink</option>
+          <option value="orange">Orange</option>
+          <option value="yellow">Yellow</option>
           <option value="green">Green</option>
           <option value="blue">Blue</option>
-          <option value="yellow">Yellow</option>
-          <option value="orange">Orange</option>
-          <option value="purple">Purple</option>    
+          <option value="purple">Purple</option>
         </select>
       </div>
-    </div>
+    );
+  };
+
+  renderButtons = (): JSX.Element => {
+    return (
+      <div>
+        <button onClick={this.doSaveClick}>Save</button>
+        <button onClick={this.doBackClick}>Back</button>
+      </div>
     );
   };
 
@@ -67,19 +84,21 @@ export class FileEditor extends Component<FileEditorProps, FileEditorState> {
       alert("You must select a square to split!");
       return;
     }
+
+    const currentSquare = findSquare(this.state.selected, this.state.root);
+    if (currentSquare.kind !== "solid") {
+      alert("Selected square is not a solid square!");
+      return;
+    }
     
     const newSquare = split(
-      solid("white"), 
-      solid("white"), 
-      solid("white"), 
-      solid("white")
+      solid(currentSquare.color),
+      solid(currentSquare.color),
+      solid(currentSquare.color),
+      solid(currentSquare.color)
     );
 
     const newRoot = replaceSquare(this.state.selected, newSquare, this.state.root);
-    if (newRoot === undefined) {
-      alert("Selected square not found in the root square!");
-      return;
-    }
     this.setState({ root: newRoot, selected: this.state.selected });
   };
 
@@ -89,16 +108,19 @@ export class FileEditor extends Component<FileEditorProps, FileEditorState> {
       alert("You must select a square to merge!");
       return;
     }
+
     const pathLength = len(this.state.selected);
     if (pathLength == 0n) {
       alert("Cannot merge root!");
       return;
     }
+
     const target = findSquare(this.state.selected, this.state.root);
     if (target.kind !== "solid") {
       alert("Selected square is not a solid square!");
       return;
     }
+    
     const parentPath = prefix(pathLength - 1n, this.state.selected);
     const newRoot = replaceSquare(parentPath, solid(target.color), this.state.root);   
     this.setState({ root: newRoot, selected: parentPath }); 
@@ -111,13 +133,28 @@ export class FileEditor extends Component<FileEditorProps, FileEditorState> {
       return;
     }
 
+    if (evt.target.value === "") {
+      alert("You must select a color!");
+      return;
+    }
+
+    const target = findSquare(this.state.selected, this.state.root);
+    if (target.kind !== "solid") {
+      alert("Selected square is not a solid square!");
+      return;
+    }
+
     const newColor = toColor(evt.target.value);
     const newSquare = solid(newColor);
     const newRoot = replaceSquare(this.state.selected, newSquare, this.state.root);
-    if (newRoot === undefined) {
-      alert("Selected square not found in the root square!");
-      return;
-    }
-    this.setState({ root: newRoot, selected: this.state.selected });
+    this.setState({ root: newRoot });
+  };
+
+  doSaveClick = (_evt: MouseEvent<HTMLButtonElement>): void => {
+    this.props.onSave(this.props.fileName, this.state.root);
+  };
+
+  doBackClick = (_evt: MouseEvent<HTMLButtonElement>): void => {
+    this.props.onBackClick();
   };
 }
