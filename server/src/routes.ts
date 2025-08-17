@@ -41,7 +41,7 @@ export const dummy = (req: SafeRequest, res: SafeResponse): void => {
 export const getNames = (_req: SafeRequest, _res: SafeResponse): void => {
   // TODO: Implement getNames route function
   const names = compact_list(saved.getKeys());
-  _res.json({ names });
+  _res.status(200).json({ files: names });
 };
 
 
@@ -59,7 +59,7 @@ export const save = (_req: SafeRequest, _res: SafeResponse): void => {
     return;
   }
   saved = saved.setValue(name, value);
-  _res.send({ success: true, name, value });
+  _res.status(200).json({ success: true, name, value });
 };
 
 
@@ -72,11 +72,11 @@ export const load = (_req: SafeRequest, _res: SafeResponse): void => {
     return;
   }
   if (!saved.containsKey(name)) {
-    _res.send({ value: null });
+    _res.status(200).json({ value: null }); 
     return;
   }
   const value = saved.getValue(name);
-  _res.json({ value });
+  _res.status(200).json({ value });
 };
 
 

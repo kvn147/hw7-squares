@@ -151,7 +151,7 @@ export class App extends Component<{}, AppState> {
   doFilesRequestClick = (): void => {
     this.setState({ show: { kind: "loading" } });
 
-    fetch("/api/files")
+    fetch("/api/names")
       .then(this.doFilesResp)
       .then(this.doFilesJson)
       .then(this.doFilesSuccessClick)
@@ -162,7 +162,7 @@ export class App extends Component<{}, AppState> {
     if (res.status === 200) {
       return res.json();
     } else {
-      throw new Error(`bad status code from /api/files: ${res.status}`);
+      throw new Error(`bad status code from /api/names: ${res.status}`);
     }
   };
 
@@ -180,7 +180,7 @@ export class App extends Component<{}, AppState> {
         while (i < raw.length) {
           const v = raw[i];
           if (typeof v !== "string") {
-            throw new Error('Invalid "files" element from /api/files');
+            throw new Error('Invalid "files" element from /api/names');
           }
           out.push(v);
           i += 1;
@@ -188,7 +188,7 @@ export class App extends Component<{}, AppState> {
         return { files: out };
       }
     }
-    throw new Error("Invalid response format from /api/files");
+    throw new Error("Invalid response format from /api/names");
   };
   
   doFilesSuccessClick = (payload: { files: string[] }): void => {

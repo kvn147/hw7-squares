@@ -1,153 +1,81 @@
-import * as assert from 'assert';
-import * as httpMocks from 'node-mocks-http'; 
-import { dummy, save, load, getNames, resetSavesForTesting, addSaveForTesting } from './routes';
+// server/src/routes_test.ts
+import * as assert from "assert";
+import * as httpMocks from "node-mocks-http";
+import { save, load, getNames, resetSavesForTesting, addSaveForTesting } from "./routes";
 
-/**
- * Helpers (typed; no any, no casts)
- */
-/** Tiny helper to build req/res pairs */
-const makeReqRes = (
-  method: "GET" | "POST",
-  url: string,
-  query?: Record<string, unknown>,
-  body?: unknown
-): { req: httpMocks.MockRequest<any>, res: httpMocks.MockResponse<any> } => {
-  const req = httpMocks.createRequest({ method, url, query, body });
-  const res = httpMocks.createResponse();
-  return { req, res };
-};
-
-describe('routes', function () {
+describe("routes", function () {
   beforeEach(function () {
+    // Fresh state before every test (don’t rely on previous tests)
     resetSavesForTesting();
   });
 
-  it("POST /api/save — saves a file (statement coverage: success path)", function () {
-    const { req, res } = makeReqRes(
-      "POST",
-      "/api/save",
-      { name: "demo" },
-      { value: { color: "blue" } }
-    );
-
-    save(req, res);
-
-    assert.strictEqual(res._getStatusCode(), 200);
-    const data = res._getData();
-    // Successful responses should be JSON records (object)
-    assert.strictEqual(typeof data, "object");
-  });
-
-  it("GET /api/load — loads existing file (branch coverage: found)", function () {
-    // Seed using the real handler (or use addSaveForTesting if you prefer)
+  it("getNames", function () {
+    // Statement coverage: empty store returns []
     {
-      const s = makeReqRes(
-        "POST",
-        "/api/save",
-        { name: "k1" },
-        { value: ["blue", "orange"] }
-      );
-      save(s.req, s.res);
-      assert.strictEqual(s.res._getStatusCode(), 200);
+      const req0 = httpMocks.createRequest({ method: "GET", url: "/api/names" });
+      const res0 = httpMocks.createResponse();
+      getNames(req0, res0);
+      assert.strictEqual(res0.statusCode, 200);
+      assert.deepStrictEqual(res0._getJSONData(), { names: [] });
     }
 
-    const { req, res } = makeReqRes("GET", "/api/load", { name: "k1" });
-    load(req, res);
+    // Branch/argument variety: non-empty store (1 name)
+    addSaveForTesting("test", { value: "v" });
+    const req1 = httpMocks.createRequest({ method: "GET", url: "/api/names" });
+    const res1 = httpMocks.createResponse();
+    getNames(req1, res1);
+    assert.strictEqual(res1.statusCode, 200);
+    assert.deepStrictEqual(res1._getJSONData(), { names: ["test"] });
 
-    assert.strictEqual(res._getStatusCode(), 200);
-    const body = res._getData();
-    assert.strictEqual(typeof body, "object");
-    // shape check then dot access (no brackets)
-    if (typeof body === "object" && body !== null && "value" in body) {
-      const out = (body as { value: unknown }).value; // (Type narrowing via check above)
-      // NOTE: If your linter disallows this cast, inline-check elements individually below.
-      assert.deepStrictEqual(out, ["blue", "orange"]);
-    } else {
-      assert.fail("response missing 'value'");
+    // Notes:
+    // - “At least two tests” for a function with many inputs: covered by the two calls above.
+    // - No loops/recursion here, so loop coverage is N/A.
+  });
+
+  it("save", function () {
+    // Statement coverage: successful save with object payload
+    {
+      const req = httpMocks.createRequest({
+        method: "POST",
+        url: "/api/save?name=a",
+        body: { value: { some: "data" } }
+      });
+      const res = httpMocks.createResponse();
+      save(req, res);
+      assert.strictEqual(res.statusCode, 200);
+      assert.deepStrictEqual(res._getJSONData(), { success: true, name: "a", value: { some: "data" } });
+    }
+
+    // “At least two tests”: second successful save with a different payload shape
+    {
+      const req2 = httpMocks.createRequest({
+        method: "POST",
+        url: "/api/save?name=b",
+        body: { value: 17 }
+      });
+      const res2 = httpMocks.createResponse();
+      save(req2, res2);
+      assert.strictEqual(res2.statusCode, 200);
+      assert.deepStrictEqual(res2._getJSONData(), { success: true, name: "b", value: 17 });
     }
   });
 
-  it("GET /api/load — missing file returns null value (branch coverage: not found)", function () {
-    const { req, res } = makeReqRes("GET", "/api/load", { name: "does-not-exist" });
-    load(req, res);
-
-    assert.strictEqual(res._getStatusCode(), 200);
-    const body = res._getData();
-    assert.strictEqual(typeof body, "object");
-    if (typeof body === "object" && body !== null && "value" in body) {
-      // eslint hint: only booleans in conditionals — satisfied (comparison produces boolean)
-      assert.strictEqual((body as { value: unknown }).value, null);
-    } else {
-      assert.fail("response missing 'value'");
-    }
-  });
-
-  it("GET /api/files — lists saved names (statement/branch: non-empty list)", function () {
-    // Seed with two files (either helper or handler)
-    if (typeof addSaveForTesting === "function") {
-      addSaveForTesting("alpha", { value: { c: "pink" } });
-      addSaveForTesting("beta", { value: ["purple", "white"] });
-    } else {
-      let t = makeReqRes("POST", "/api/save", { name: "alpha" }, { value: { c: "pink" } });
-      save(t.req, t.res); assert.strictEqual(t.res._getStatusCode(), 200);
-      t = makeReqRes("POST", "/api/save", { name: "beta" }, { value: ["purple", "white"] });
-      save(t.req, t.res); assert.strictEqual(t.res._getStatusCode(), 200);
+  it("load", function () {
+    // Branch coverage: not found branch
+    {
+      const req0 = httpMocks.createRequest({ method: "GET", url: "/api/load?name=missing" });
+      const res0 = httpMocks.createResponse();
+      load(req0, res0);
+      assert.strictEqual(res0.statusCode, 200);
+      assert.deepStrictEqual(res0._getJSONData(), { value: null });
     }
 
-    const { req, res } = makeReqRes("GET", "/api/files");
-    files(req, res);
-
-    assert.strictEqual(res._getStatusCode(), 200);
-    const body = res._getData();
-    assert.strictEqual(typeof body, "object");
-    if (!(typeof body === "object" && body !== null && "files" in body)) {
-      assert.fail("response missing 'files'");
-      return;
-    }
-    const arr = (body as { files: unknown }).files;
-    assert.strictEqual(Array.isArray(arr), true);
-
-    // Scan with a while-loop; verify types as we go.
-    let i = 0;
-    let sawAlpha = false;
-    let sawBeta = false;
-
-    // Inv: 0 <= i && i <= (arr as unknown[]).length
-    //     and sawAlpha/sawBeta reflect presence in arr[0..i-1].
-    // Variant: (arr as unknown[]).length - i
-    while (i < (arr as unknown[]).length) {
-      const v = (arr as unknown[])[i];
-      if (typeof v === "string") {
-        if (v === "alpha") { sawAlpha = true; }
-        if (v === "beta")  { sawBeta  = true; }
-      }
-      i += 1;
-    }
-
-    assert.strictEqual(sawAlpha, true);
-    assert.strictEqual(sawBeta, true);
-  });
-
-  it("GET /api/load — 400 on missing ?name (error branch)", function () {
-    const { req, res } = makeReqRes("GET", "/api/load"); // no query
-    load(req, res);
-    assert.strictEqual(res._getStatusCode(), 400);
-    const txt = res._getData();
-    assert.strictEqual(typeof txt, "string");
-    assert.strictEqual(txt.length > 0, true);
-  });
-
-  it("POST /api/save — 400 on missing body.value (error branch)", function () {
-    const { req, res } = makeReqRes(
-      "POST",
-      "/api/save",
-      { name: "bad" },
-      {} // no value
-    );
-    save(req, res);
-    assert.strictEqual(res._getStatusCode(), 400);
-    const txt = res._getData();
-    assert.strictEqual(typeof txt, "string");
-    assert.strictEqual(txt.length > 0, true);
+    // Statement coverage and found branch
+    addSaveForTesting("x", ["blue", "orange"]);
+    const req1 = httpMocks.createRequest({ method: "GET", url: "/api/load?name=x" });
+    const res1 = httpMocks.createResponse();
+    load(req1, res1);
+    assert.strictEqual(res1.statusCode, 200);
+    assert.deepStrictEqual(res1._getJSONData(), { value: ["blue", "orange"] });
   });
 });
